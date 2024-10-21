@@ -1,0 +1,4 @@
+__pycache__
+lightning_logs
+training_data
+lunarlander_data.h5

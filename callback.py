@@ -88,6 +88,11 @@ class SaveTrainingDataCallback(BaseCallback):
         np.save(os.path.join(self.save_path, f'rewards_{self.rollout_counter}.npy'), np.array(self.rewards))
         self.current_len += len(self.actions)
         
+        with open(os.path.join(self.save_path, 'metadata.txt'), 'w') as f:
+            f.write(f"Length: {self.current_len}")
+        
+        print("WRITTEN TO FILE")
+        
         
         
         # Reset data buffers after saving to free memory

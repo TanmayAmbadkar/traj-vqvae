@@ -20,7 +20,7 @@ model = PPO("MultiInputPolicy", env, policy_kwargs=policy_kwargs, verbose=1)
 callback = SaveTrainingDataCallback()
 
 # Train the model and collect data
-model.learn(total_timesteps=5000, callback=callback)
+model.learn(total_timesteps=100000, callback=callback)
 
 data_dir = './training_data'
 output_file = 'lunarlander_data.h5'
@@ -39,7 +39,7 @@ dataloader = DataLoader(dataset, batch_size=32, shuffle=True, num_workers=4)  # 
 vqvae_lightning_model = VQVAE_LunarLander_Lightning(num_embeddings=512, latent_dim=64, action_dim=1, reward_dim=1, commitment_cost=0.25, lr=1e-4)
 
 # Initialize the PyTorch Lightning Trainer
-trainer = pl.Trainer(max_epochs=10, devices=1, accelerator="gpu")
+trainer = pl.Trainer(max_epochs=50, devices=1, accelerator="gpu")
 
 # Train the model
 trainer.fit(vqvae_lightning_model, dataloader)
@@ -70,10 +70,12 @@ for traj in trajectories:
         image_obs_tensor = torch.from_numpy(image_obs).permute(2, 0, 1)  # Change to (C, H, W)
         resized_image = callback.transform(image_obs_tensor)  # Apply resizing
         
-        print(resized_image)
-        print(obs['raw_observation'])
-        print(action,reward)
-        _, token = vqvae_lightning_model(resized_image, torch.Tensor(obs['raw_observation']), torch.Tensor([action]), torch.Tensor([reward]))
-        tokens.append(token)
+        _, token = vqvae_lightning_model.vqvae_model.get_quantized_embedding_with_id(
+            resized_image.reshape(-1, *resized_image.shape), 
+            torch.Tensor(obs['raw_observation']).reshape(1, -1), 
+            torch.Tensor(np.array([action])).reshape(1, -1), 
+            torch.Tensor(np.array([reward])).reshape(1, -1)
+        )
+        tokens.append(token[0].item())
         
     print(tokens)
